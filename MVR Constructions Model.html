@@ -1,0 +1,600 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:wght@500;600&display=swap">
+<title>MVR Constructions Model</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: a framed 3D stage on the left, a drafting-sheet control panel on the right; stacks on phones. */
+:root{
+  --bg:#e8ebee; --panel:#f6f7f8; --ink:#14203b; --ink2:#4a5671; --line:#cbd2da;
+  --accent:#c4561a; --on-accent:#ffffff; --chip:#e1e6eb;
+  --sel-bg:#14203b; --sel-fg:#f6f7f8; --hud:rgba(246,247,248,.92);
+  --f-display:'Newsreader',Georgia,'Times New Roman',serif;
+  --f-ui:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d1322; --panel:#151c30; --ink:#e8ecf4; --ink2:#9aa5bd; --line:#2a3452;
+    --accent:#f08a4b; --on-accent:#1a1206; --chip:#1f2842;
+    --sel-bg:#e8ecf4; --sel-fg:#0d1322; --hud:rgba(21,28,48,.92); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d1322; --panel:#151c30; --ink:#e8ecf4; --ink2:#9aa5bd; --line:#2a3452;
+  --accent:#f08a4b; --on-accent:#1a1206; --chip:#1f2842;
+  --sel-bg:#e8ecf4; --sel-fg:#0d1322; --hud:rgba(21,28,48,.92); color-scheme:dark;
+}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--ink); font-family:var(--f-ui); font-size:14px; line-height:1.45;
+  box-sizing:border-box; padding-block:16px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+*{box-sizing:border-box}
+.app{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;height:100%}
+.stage{position:relative;min-width:0;min-height:0;border-radius:10px;overflow:hidden;background:#cfe3f0;border:1px solid var(--line)}
+.stage canvas{display:block;width:100%;height:100%;touch-action:none;outline:none}
+.hud{position:absolute;z-index:2;background:var(--hud);color:var(--ink);border:1px solid var(--line);border-radius:8px;backdrop-filter:blur(6px)}
+.hud-level{left:12px;top:12px;padding:6px 10px;font-family:var(--f-mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.hud-hint{right:12px;top:12px;padding:6px 10px;font-size:12px;color:var(--ink2);max-width:46%}
+.hud-views{left:50%;bottom:12px;transform:translateX(-50%);display:flex;gap:4px;padding:4px;max-width:calc(100% - 24px)}
+.hud-views button{font:500 12px var(--f-ui);padding:6px 12px;border:0;border-radius:6px;background:transparent;color:var(--ink);cursor:pointer;white-space:nowrap}
+.hud-views button:hover{background:var(--chip)}
+.nogl{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:#14203b}
+.panel{min-width:0;min-height:0;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:18px}
+.brand h1{margin:0;font-family:var(--f-display);font-weight:600;font-size:28px;line-height:1.05;letter-spacing:-.01em;text-wrap:balance}
+.brand p{margin:6px 0 0;font-family:var(--f-mono);font-size:12px;color:var(--ink2);letter-spacing:.02em}
+h2{margin:0 0 8px;font-family:var(--f-mono);font-weight:500;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink2)}
+.levels{display:flex;flex-direction:column;gap:4px}
+.lv{display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;gap:8px;width:100%;text-align:left;font:inherit;color:var(--ink);background:var(--chip);border:1px solid transparent;border-radius:8px;padding:8px 10px;cursor:pointer}
+.lv:hover{border-color:var(--line)}
+.lv .tag{font-family:var(--f-mono);font-size:12px;color:var(--ink2)}
+.lv .nm{font-weight:500}
+.lv .fl{font-family:var(--f-mono);font-size:12px;color:var(--ink2)}
+.lv[aria-pressed="true"]{background:var(--sel-bg);color:var(--sel-fg)}
+.lv[aria-pressed="true"] .tag,.lv[aria-pressed="true"] .fl{color:var(--sel-fg);opacity:.75}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.info{border-top:1px solid var(--line);padding-top:14px}
+.info h3{margin:0 0 4px;font-family:var(--f-display);font-weight:600;font-size:20px}
+.info p{margin:0 0 4px;color:var(--ink2)}
+.switches{display:flex;flex-direction:column;gap:10px}
+.sw{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.sw label{cursor:pointer}
+.sw input[type=checkbox]{appearance:none;-webkit-appearance:none;width:38px;height:22px;border-radius:11px;background:var(--chip);border:1px solid var(--line);position:relative;cursor:pointer;margin:0;flex:none}
+.sw input[type=checkbox]::after{content:"";position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:var(--ink2);transition:transform .15s}
+.sw input[type=checkbox]:checked{background:var(--accent);border-color:var(--accent)}
+.sw input[type=checkbox]:checked::after{transform:translateX(16px);background:var(--on-accent)}
+.range{display:flex;flex-direction:column;gap:6px}
+.range input{width:100%;accent-color:var(--accent)}
+dl{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px;font-size:13px}
+dt{color:var(--ink2)} dd{margin:0;font-family:var(--f-mono);text-align:right;font-variant-numeric:tabular-nums}
+.note{margin:0;font-size:12px;color:var(--ink2)}
+@media (max-width:860px){
+  html,body{height:auto}
+  .app{grid-template-columns:minmax(0,1fr);height:auto}
+  .stage{height:66vh;min-height:360px}
+  .panel{overflow:visible}
+  .hud-hint{display:none}
+}
+@media (prefers-reduced-motion:reduce){.sw input[type=checkbox]::after{transition:none}}
+</style>
+
+<div class="app">
+  <div class="stage" id="stage">
+    <div class="hud hud-level" id="hudLevel">Whole building</div>
+    <div class="hud hud-hint" id="hint">Drag to orbit · Scroll to zoom · Right-drag to pan</div>
+    <div class="hud hud-views" role="group" aria-label="Camera views">
+      <button type="button" data-view="corner">Corner</button>
+      <button type="button" data-view="front">Front</button>
+      <button type="button" data-view="back">Back</button>
+      <button type="button" data-view="plan">Plan</button>
+    </div>
+  </div>
+
+  <aside class="panel">
+    <div class="brand">
+      <h1>MVR Constructions</h1>
+      <p>2BHK flats · Stilt + 4 floors · 8 homes</p>
+    </div>
+
+    <section>
+      <h2>Level</h2>
+      <div class="levels" id="levels"></div>
+      <div class="info" id="info" aria-live="polite"></div>
+    </section>
+
+    <section>
+      <h2>View</h2>
+      <div class="switches">
+        <div class="sw"><label for="swLabels">Room labels</label><input type="checkbox" id="swLabels" checked></div>
+        <div class="sw"><label for="swNight">Night lighting</label><input type="checkbox" id="swNight"></div>
+        <div class="sw"><label for="swSpin">Auto-rotate</label><input type="checkbox" id="swSpin"></div>
+        <div class="range"><label for="rngExplode">Pull floors apart</label><input type="range" id="rngExplode" min="0" max="100" value="0"></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>From the brochure</h2>
+      <dl>
+        <dt>Plot</dt><dd>50′ × 60′ · 333 sq yd</dd>
+        <dt>Each flat</dt><dd>1,133 sq ft</dd>
+        <dt>Land share</dt><dd>41.625 sq yd</dd>
+        <dt>Built-up</dt><dd>9,064 sq ft</dd>
+        <dt>Road</dt><dd>30′ wide</dd>
+        <dt>Lift</dt><dd>4 persons</dd>
+      </dl>
+    </section>
+
+    <p class="note">Rooms and sizes are traced from the brochure floor plan. Facade colours follow the artist's render. Furniture is only there to show scale.</p>
+  </aside>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+'use strict';
+var T=THREE; T.ColorManagement.legacyMode=false;
+var stageEl=document.getElementById('stage');
+var renderer;
+try{ renderer=new T.WebGLRenderer({antialias:true}); }
+catch(err){ stageEl.insertAdjacentHTML('beforeend','<p class="nogl">This browser could not start 3D graphics. Try another browser or device.</p>'); return; }
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+renderer.outputEncoding=T.sRGBEncoding;
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=T.PCFSoftShadowMap;
+stageEl.insertBefore(renderer.domElement,stageEl.firstChild);
+
+var SKY={day:'#cfe3f0',night:'#0b1226'};
+var scene=new T.Scene(); scene.background=new T.Color(SKY.day); scene.fog=new T.Fog(SKY.day,300,800);
+var camera=new T.PerspectiveCamera(34,1,1,2000);
+var controls=new T.OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true; controls.dampingFactor=.08; controls.minDistance=20; controls.maxDistance=420;
+controls.maxPolarAngle=Math.PI*0.495; controls.autoRotateSpeed=1.2;
+
+/* ---------- lights ---------- */
+var hemi=new T.HemisphereLight('#dfeaf5','#8a8576',.9); scene.add(hemi);
+var sun=new T.DirectionalLight('#fff3e0',1.7); sun.position.set(70,110,90); sun.castShadow=true;
+var smap=window.innerWidth<700?1024:2048; sun.shadow.mapSize.set(smap,smap);
+var sc=sun.shadow.camera; sc.left=-95; sc.right=95; sc.top=95; sc.bottom=-95; sc.near=10; sc.far=400;
+sun.shadow.bias=-.0004; sun.shadow.normalBias=.35; scene.add(sun);
+
+/* ---------- materials ---------- */
+var _mc={};
+function mat(hex,o){ o=o||{}; var k=hex+JSON.stringify(o);
+  return _mc[k]||(_mc[k]=new T.MeshStandardMaterial(Object.assign({color:hex,roughness:.88,metalness:0},o))); }
+var glass=new T.MeshStandardMaterial({color:'#a9cfe0',roughness:.08,metalness:.1,transparent:true,opacity:.38,depthWrite:false,emissive:'#000000'});
+var lampMat=new T.MeshStandardMaterial({color:'#fff4d6',emissive:'#000000',roughness:.5});
+var M={
+  slab:mat('#e9e7e2'), conc:mat('#bcb8b1'), wall:mat('#f0ede6'), trim:mat('#f6f4f0'),
+  wood:mat('#9a5a33'), woodL:mat('#c79a6b'), woodD:mat('#6e4326'), teak:mat('#7a4524'), door:mat('#b98a5e'),
+  steel:mat('#9ba3ab',{metalness:.5,roughness:.4}), dark:mat('#2c2f35'), granite:mat('#33363b',{roughness:.35}),
+  white:mat('#fbfbfa'), lav:mat('#8d8899'), taupe:mat('#b6a796'), olive:mat('#6c7866'), sand:mat('#bfb29f'),
+  green:mat('#6f9560'), paver:mat('#8d8b86'), gold:mat('#d6a23a',{metalness:.6,roughness:.35})
+};
+
+/* ---------- geometry helpers ---------- */
+function box(g,cx,cy,cz,sx,sy,sz,m,cast){
+  var me=new T.Mesh(new T.BoxGeometry(sx,sy,sz),m); me.position.set(cx,cy,cz);
+  me.castShadow=cast!==false; me.receiveShadow=true; g.add(me); return me;
+}
+function rect(g,x0,z0,x1,z1,ya,yb,m,cast){ return box(g,(x0+x1)/2,(ya+yb)/2,(z0+z1)/2,x1-x0,yb-ya,z1-z0,m,cast); }
+function cyl(g,x,y,z,r0,r1,h,m,seg){ var me=new T.Mesh(new T.CylinderGeometry(r0,r1,h,seg||16),m); me.position.set(x,y,z); me.castShadow=true; me.receiveShadow=true; g.add(me); return me; }
+function tile(g,x0,z0,x1,z1,hex){ rect(g,x0,z0,x1,z1,0,.05,mat(hex),false); }
+
+function pane(g,horiz,fixed,c,y,lw,lh,dd,m){
+  if(horiz) box(g,c,y,fixed,lw,lh,dd,m,false); else box(g,fixed,y,c,dd,lh,lw,m,false);
+}
+function glaze(g,horiz,fixed,p,w,yb,oh,t){
+  var fw=.16,d=t+.12,mid=p+w/2,cy=yb+oh/2;
+  pane(g,horiz,fixed,mid,cy,w,oh,.06,glass);
+  pane(g,horiz,fixed,mid,yb+fw/2,w,fw,d,M.trim);
+  pane(g,horiz,fixed,mid,yb+oh-fw/2,w,fw,d,M.trim);
+  pane(g,horiz,fixed,p+fw/2,cy,fw,oh,d,M.trim);
+  pane(g,horiz,fixed,p+w-fw/2,cy,fw,oh,d,M.trim);
+  if(w>3) pane(g,horiz,fixed,mid,cy,.1,oh,d*.6,M.trim);
+}
+function doorLeaf(g,horiz,fixed,p,w,y0,oh,swing,m){
+  var piv=new T.Group(), hh=oh-.1, lw=w-.1;
+  if(horiz){ piv.position.set(p,y0,fixed); box(piv,lw/2,hh/2,0,lw,hh,.14,m||M.door); }
+  else { piv.position.set(fixed,y0,p); box(piv,0,hh/2,lw/2,.14,hh,lw,m||M.door); }
+  piv.rotation.y=swing*1.25; g.add(piv);
+}
+/* wall along x (z1==z2) or along z (x1==x2); openings given in absolute coordinates along the wall */
+function wall(g,x1,z1,x2,z2,o){
+  o=o||{}; var t=o.t==null?.4:o.t, h=o.h==null?9.5:o.h, y0=o.y0||0, m=o.m||M.wall;
+  var horiz=Math.abs(z1-z2)<1e-6;
+  var a0=horiz?Math.min(x1,x2):Math.min(z1,z2), a1=horiz?Math.max(x1,x2):Math.max(z1,z2);
+  var fixed=horiz?z1:x1;
+  var ops=(o.open||[]).slice().sort(function(p,q){return p.p-q.p;});
+  function seg(s0,s1,ya,yb,mm){
+    if(s1-s0<.005||yb-ya<.005) return;
+    var mid=(s0+s1)/2, ln=s1-s0, cy=y0+(ya+yb)/2, hh=yb-ya;
+    if(horiz) box(g,mid,cy,fixed,ln,hh,t,mm); else box(g,fixed,cy,mid,t,hh,ln,mm);
+  }
+  var cur=a0;
+  ops.forEach(function(p){
+    var sill=p.sill||0, oh=p.h||(p.k==='win'?4.5:7);
+    seg(cur,p.p,0,h,m);
+    if(sill>0) seg(p.p,p.p+p.w,0,sill,m);
+    seg(p.p,p.p+p.w,Math.min(sill+oh,h),h,m);
+    if(p.k==='win') glaze(g,horiz,fixed,p.p,p.w,y0+sill,oh,t);
+    if(p.k==='door'&&p.leaf!==false) doorLeaf(g,horiz,fixed,p.p,p.w,y0,oh,p.swing||1,p.m);
+    cur=p.p+p.w;
+  });
+  seg(cur,a1,0,h,m);
+}
+function railing(g,x1,z1,x2,z2){
+  var horiz=Math.abs(z1-z2)<1e-6;
+  var a0=horiz?Math.min(x1,x2):Math.min(z1,z2), a1=horiz?Math.max(x1,x2):Math.max(z1,z2);
+  var f=horiz?z1:x1, ln=a1-a0, mid=(a0+a1)/2;
+  function b(cy,hh,tt,mm,cast){ if(horiz) box(g,mid,cy,f,ln,hh,tt,mm,cast); else box(g,f,cy,mid,tt,hh,ln,mm,cast); }
+  b(.7,1.4,.28,M.wood); b(2.6,2.4,.06,glass,false); b(3.85,.1,.12,M.steel);
+}
+
+/* ---------- furniture (scale cues only) ---------- */
+function grp(g,x,z,rot){ var q=new T.Group(); q.position.set(x,0,z); q.rotation.y=rot||0; g.add(q); return q; }
+function bed(g,x,z,rot,col){
+  var b=grp(g,x,z,rot);
+  box(b,0,.55,0,6.6,1.1,5.2,M.woodL); box(b,.2,1.35,0,6.0,.6,4.9,mat(col));
+  box(b,-3.2,1.9,0,.35,3.2,5.4,M.woodD);
+  box(b,-2.4,1.85,-1.2,1.1,.4,1.8,M.white,false); box(b,-2.4,1.85,1.2,1.1,.4,1.8,M.white,false);
+  box(b,-2.9,.9,-3.3,1.4,1.8,1.4,M.woodL); box(b,-2.9,.9,3.3,1.4,1.8,1.4,M.woodL);
+}
+function wardrobe(g,x,z,sx,sz){ box(g,x,3.5,z,sx,7,sz,mat('#d8ccb9')); }
+function sofa(g,x,z,rot){
+  var s=grp(g,x,z,rot);
+  box(s,0,.9,0,6.8,1.4,2.8,mat('#6d7d8f')); box(s,0,2.1,-1.2,6.8,2.3,.7,mat('#6d7d8f'));
+  box(s,-3.2,1.6,0,.5,1.6,2.8,mat('#5d6c7e')); box(s,3.2,1.6,0,.5,1.6,2.8,mat('#5d6c7e'));
+}
+function tv(g,x,z,rot){ var s=grp(g,x,z,rot); box(s,0,.7,0,5,1.4,1.3,M.woodD); box(s,0,2.6,0,3.6,2.1,.15,M.dark); }
+function table(g,x,z){
+  var s=grp(g,x,z,0);
+  box(s,0,2.4,0,5,.2,3,M.woodL);
+  [[-2.2,-1.2],[2.2,-1.2],[-2.2,1.2],[2.2,1.2]].forEach(function(l){ box(s,l[0],1.2,l[1],.2,2.4,.2,M.woodD); });
+  [[-1.5,-2.3],[1.5,-2.3],[-1.5,2.3],[1.5,2.3],[-3.4,0],[3.4,0]].forEach(function(c){ box(s,c[0],1.3,c[1],1.3,.2,1.3,M.woodD); box(s,c[0],0.65,c[1],1.1,1.3,1.1,M.woodD,false); });
+}
+function coffee(g,x,z){ box(g,x,1.1,z,2.6,.2,1.6,M.woodL); box(g,x,.55,z,2.2,1.1,1.2,M.woodD,false); }
+function counter(g,x,z,len,dep,alongX){
+  var sx=alongX?len:dep, sz=alongX?dep:len;
+  box(g,x,1.35,z,sx,2.7,sz,M.white); box(g,x,2.8,z,sx+.1,.2,sz+.1,M.granite);
+  box(g,x+(alongX?len*.2:0),2.93,z+(alongX?0:len*.2),alongX?1.6:1.0,.1,alongX?1.0:1.6,M.steel,false);
+}
+function fridge(g,x,z){ box(g,x,3,z,2.6,6,2.4,M.steel); }
+function washer(g,x,z){ box(g,x,1.4,z,2.1,2.8,2.2,M.white); box(g,x,2.3,z,.1,.1,.1,M.dark,false); }
+function wc(g,x,z,rot){ var q=grp(g,x,z,rot); box(q,0,.7,0,1.3,1.4,1.5,M.white); box(q,-.6,1.9,0,.5,1.6,1.5,M.white); }
+function basin(g,x,z){ box(g,x,2.7,z,1.8,.3,1.3,M.white); box(g,x,1.3,z,.5,2.6,.5,M.white,false); }
+function planter(g,x,z,sx,sz){ box(g,x,.5,z,sx,1,sz,mat('#7a5a44')); box(g,x,1.4,z,sx*.9,.9,sz*.8,M.green,false); }
+function puja(g,x,z,sx,sz){ box(g,x,1.4,z,sx,2.8,sz,M.wall); box(g,x,2.9,z,sx+.1,.2,sz+.1,M.gold); }
+
+/* ---------- stairs: dog-leg, 11 risers per flight, 10 ft floor to floor ---------- */
+function stairs(g){
+  var rise=5/11, i;
+  for(i=0;i<11;i++){ var top=(i+1)*rise; box(g,27.5+i,top/2,22.45,1,top,3.1,M.conc); }
+  box(g,39.5,4.75,24.15,3,.5,6.5,M.conc);
+  for(i=0;i<11;i++){ var tp=5+(i+1)*rise; box(g,37.5-i,tp-.5,25.85,1,1,3.1,M.conc); }
+}
+
+/* ---------- levels ---------- */
+var E=.3;
+function slabParts(g){
+  var s=M.slab;
+  rect(g,-.5,-.5,41.5,20.5,-.5,0,s); rect(g,-.5,27.7,41.5,49.5,-.5,0,s);
+  rect(g,5.2,20.5,26,27.7,-.5,0,s); rect(g,-.5,26.5,5.2,27.7,-.5,0,s);
+  rect(g,-.5,20.5,0,26.5,-.5,0,s); rect(g,41,20.5,41.5,27.7,-.5,0,s);
+}
+var CAR_COL=['#e8e8ea','#2b2f36','#9aa0a6','#b9463a','#e8e8ea','#3b5a7a','#c9c4b8','#2b2f36'];
+function car(g,x,z,rot,col){
+  var c=grp(g,x,z,rot), bm=mat(col,{roughness:.4,metalness:.3});
+  box(c,0,1.9,0,14,1.9,5.8,bm); box(c,-.5,3.55,0,7.2,1.4,5.0,bm); box(c,-.5,3.58,0,7.3,.95,5.05,mat('#1b2330',{roughness:.2}),false);
+  [[-4.3,-2.9],[4.3,-2.9],[-4.3,2.9],[4.3,2.9]].forEach(function(w){
+    var wh=new T.Mesh(new T.CylinderGeometry(1.1,1.1,.7,14),M.dark); wh.rotation.x=Math.PI/2; wh.position.set(w[0],1.1,w[1]); wh.castShadow=true; c.add(wh);
+  });
+}
+function buildLevel(L){
+  var g=new T.Group(); slabParts(g);
+  var lm=L<=2?M.lav:M.taupe, rm=L===1?M.sand:M.olive, I={t:.4,m:M.wall}, X={t:.6};
+  /* floor finishes */
+  var BED='#d9c8ae',HALL='#e6e0d3',KIT='#c8d0d2',WET='#9ec1c6',BAL='#b9805f',COR='#d4d1cb';
+  tile(g,0,0,12.5,5.5,BAL); tile(g,0,5.5,12.5,16,BED); tile(g,0,16,7.5,20.5,WET); tile(g,7.5,16,12.5,20.5,HALL);
+  tile(g,12.5,0,26,20.5,HALL); tile(g,26,0,34,10,KIT); tile(g,34,0,41,5.5,KIT); tile(g,34,5.5,41,10,WET); tile(g,26,10,41,20.5,BED);
+  tile(g,5.2,20.5,26,27.7,COR);
+  tile(g,0,27.7,26,38,HALL); tile(g,14.5,38,26,45,HALL); tile(g,0,38,10.5,49,BED); tile(g,10.5,41,14.5,47,WET); tile(g,10.5,38,14.5,41,HALL);
+  tile(g,14.5,45,26,49,BAL); tile(g,26,27.7,34,37.5,KIT); tile(g,34,27.7,41,32.5,KIT); tile(g,34,32.5,41,37.5,WET); tile(g,26,37.5,41,49,BED);
+  /* exterior walls */
+  wall(g,12.5,E,26,E,{t:.6,m:lm,open:[{k:'win',p:16,w:5,sill:2.5,h:5.5}]});
+  wall(g,26,E,41,E,{t:.6,m:rm,open:[{k:'win',p:28,w:4,sill:3.5,h:4},{k:'win',p:35.5,w:2.5,sill:5.5,h:2.5}]});
+  wall(g,E,5.5,E,49,{t:.6,m:lm,open:[{k:'win',p:8,w:5,sill:2.5,h:5},{k:'win',p:17.5,w:2,sill:5.5,h:2.5},{k:'win',p:29,w:5.5,sill:2.5,h:5.5},{k:'win',p:41,w:5,sill:2.5,h:5}]});
+  wall(g,41-E,0,41-E,49,{t:.6,m:rm,open:[{k:'win',p:1.5,w:2.5,sill:5.5,h:2.5},{k:'win',p:6.5,w:2,sill:5.5,h:2.5},{k:'win',p:13,w:5,sill:2.5,h:5},{k:'win',p:22,w:4,sill:3,h:5},{k:'win',p:29.5,w:4,sill:3.5,h:4},{k:'win',p:34,w:2,sill:5.5,h:2.5},{k:'win',p:40,w:5,sill:2.5,h:5}]});
+  wall(g,0,49-E,14.5,49-E,{t:.6,m:lm,open:[{k:'win',p:3,w:5,sill:2.5,h:5}]});
+  wall(g,26,49-E,41,49-E,{t:.6,m:rm,open:[{k:'win',p:30,w:5.5,sill:2.5,h:5.5}]});
+  box(g,38.3,4.7,49.07,1.5,7.8,.15,M.wood,false); box(g,8.8,4.7,49.07,1.0,7.8,.15,M.wood,false);
+  /* flat at the back */
+  wall(g,0,5.5,12.5,5.5,Object.assign({open:[{k:'win',p:3,w:6,sill:0,h:7.2}]},I));
+  wall(g,12.5,0,12.5,5.5,I);
+  wall(g,12.5,5.5,12.5,20.5,Object.assign({open:[{k:'door',p:10,w:3}]},I));
+  wall(g,0,16,12.5,16,Object.assign({open:[{k:'door',p:2,w:2.5}]},I));
+  wall(g,7.5,16,7.5,20.5,I);
+  wall(g,26,0,26,20.5,Object.assign({open:[{k:'door',p:3,w:3,leaf:false},{k:'door',p:14,w:3}]},I));
+  wall(g,34,0,34,10,Object.assign({open:[{k:'door',p:1,w:3}]},I));
+  wall(g,34,5.5,41,5.5,I);
+  wall(g,26,10,41,10,Object.assign({open:[{k:'door',p:36,w:2.5}]},I));
+  /* corridor, lift, stair */
+  wall(g,0,20.5,41,20.5,{t:.45,m:M.wall,open:[{k:'door',p:18,w:3.5,m:M.teak}]});
+  wall(g,0,27.7,41,27.7,{t:.45,m:M.wall,open:[{k:'door',p:18,w:3.5,m:M.teak,swing:-1}]});
+  wall(g,5.2,20.5,5.2,26.5,{t:.4,m:M.conc,open:[{k:'door',p:21.5,w:3.2,m:M.steel}]});
+  wall(g,0,26.5,5.2,26.5,{t:.4,m:M.conc});
+  wall(g,26,20.5,26,27.7,{t:.4,m:M.wall,open:[{k:'door',p:20.9,w:6.6,h:8,leaf:false}]});
+  stairs(g);
+  /* flat at the front */
+  wall(g,0,38,10.5,38,Object.assign({open:[{k:'door',p:3,w:3}]},I));
+  wall(g,10.5,38,10.5,49,Object.assign({open:[{k:'door',p:42,w:2.5}]},I));
+  wall(g,10.5,41,14.5,41,I); wall(g,10.5,47,14.5,47,I); wall(g,14.5,41,14.5,45,I);
+  wall(g,14.5,45,26,45,Object.assign({open:[{k:'win',p:17,w:6,sill:0,h:7.2}]},I));
+  wall(g,26,27.7,26,49,Object.assign({open:[{k:'door',p:29,w:3,leaf:false},{k:'door',p:40,w:3}]},I));
+  wall(g,26,37.5,41,37.5,Object.assign({open:[{k:'door',p:36,w:2.5}]},I));
+  wall(g,34,27.7,34,37.5,Object.assign({open:[{k:'door',p:29,w:3,leaf:false}]},I));
+  wall(g,34,32.5,41,32.5,I);
+  wall(g,14.5,45,14.5,49,{t:.5,m:M.trim});
+  /* balconies */
+  railing(g,0,.25,12.5,.25); railing(g,.25,0,.25,5.5); railing(g,14.5,48.8,26,48.8);
+  planter(g,2,1.2,2.4,1); planter(g,11,1.2,2.4,1); planter(g,17,48,2.4,.9); planter(g,24,48,2.4,.9);
+  /* furniture: back flat */
+  bed(g,4.4,10.7,0,'#d9dee8'); wardrobe(g,11.6,7.9,1.6,4);
+  wc(g,1.6,19.3,0); basin(g,6.6,16.9);
+  table(g,19.2,4.2); sofa(g,14.4,15.5,Math.PI/2); coffee(g,18.2,15.5); tv(g,25.3,12,-Math.PI/2); puja(g,24.4,1.3,3.2,2.4);
+  counter(g,30,1.3,7,2,true); counter(g,29.2,8.5,4.5,2,true); fridge(g,32.7,8.5);
+  washer(g,36,1.8);
+  wc(g,40,8.3,Math.PI); basin(g,35.5,6.6);
+  bed(g,37.4,15.2,Math.PI,'#dfd6cc'); wardrobe(g,30.5,19.5,5,1.7);
+  /* furniture: front flat */
+  tv(g,5.5,28.6,0); sofa(g,5.5,34.4,Math.PI); coffee(g,5.5,31.6);
+  table(g,20,38.5); puja(g,24,29.2,3.2,2.4);
+  bed(g,4.4,43.5,0,'#d8dde5'); wardrobe(g,8.4,39.2,4,1.7);
+  wc(g,13.7,44,Math.PI); basin(g,11.7,41.9);
+  counter(g,30,28.8,7,2,true); counter(g,29.2,36.4,4.5,2,true); fridge(g,32.7,36.4);
+  washer(g,36,29.2);
+  wc(g,40,35.6,Math.PI); basin(g,35.5,33.9);
+  bed(g,37.4,43.3,Math.PI,'#dfd6cc'); wardrobe(g,29.2,39.1,4.5,1.7);
+  return g;
+}
+function buildGround(){
+  var g=new T.Group(), i;
+  rect(g,0,0,41,49,0,.12,M.paver,false);
+  rect(g,16,0,26,49,.12,.14,mat('#76757a'),false);
+  [0,10.4,20.5].forEach(function(z){ rect(g,.5,z-.1,15.5,z+.1,.14,.16,M.white,false); rect(g,26.5,z-.1,40.5,z+.1,.14,.16,M.white,false); });
+  [27.7,38.5,49].forEach(function(z){ rect(g,.5,z-.1,15.5,z+.1,.14,.16,M.white,false); rect(g,26.5,z-.1,40.5,z+.1,.14,.16,M.white,false); });
+  [.5,26,40.5].forEach(function(x){ [.5,20.5,27.7,48.5].forEach(function(z){ box(g,x,4.75,z,1,9.5,1,M.slab); }); });
+  [.5,20.5,27.7,48.5].forEach(function(z){ rect(g,-.5,z-.4,41.5,z+.4,8.5,9.5,M.slab); });
+  [.5,26,40.5].forEach(function(x){ rect(g,x-.4,-.5,x+.4,49.5,8.5,9.5,M.slab); });
+  var k=0;
+  [5.2,15.4,33,43.7].forEach(function(z){ car(g,8.2,z,Math.PI,CAR_COL[k++]); });
+  [5.2,15.4,33,43.7].forEach(function(z){ car(g,33.7,z,0,CAR_COL[k++]); });
+  wall(g,E,20.5,E,26.5,{t:.6,m:M.conc}); wall(g,0,20.5,5.2,20.5,{t:.4,m:M.conc}); wall(g,0,26.5,5.2,26.5,{t:.4,m:M.conc});
+  wall(g,5.2,20.5,5.2,26.5,{t:.4,m:M.conc,open:[{k:'door',p:21.5,w:3.2,m:M.steel}]});
+  wall(g,26,20.5,41,20.5,{t:.4,m:M.wall}); wall(g,26,27.7,41,27.7,{t:.4,m:M.wall}); wall(g,41-E,20.5,41-E,27.7,{t:.6,m:M.olive});
+  wall(g,26,20.5,26,27.7,{t:.4,m:M.wall,open:[{k:'door',p:20.9,w:6.6,h:8,leaf:false}]});
+  stairs(g);
+  return g;
+}
+function buildRoof(){
+  var g=new T.Group(); slabParts(g);
+  rect(g,-.5,-.5,41.5,0,0,3,M.trim); rect(g,-.5,49,41.5,49.5,0,3,M.trim); rect(g,-.5,0,0,49,0,3,M.trim); rect(g,41,0,41.5,49,0,3,M.trim);
+  var mo={y0:-.5,h:8.5,t:.5,m:M.trim};
+  wall(g,26,20.5,41,20.5,mo); wall(g,26,27.7,41,27.7,mo); wall(g,41-E,20.5,41-E,27.7,mo);
+  wall(g,26,20.5,26,27.7,{y0:-.5,h:8.5,t:.5,m:M.trim,open:[{k:'door',p:20.9,w:6.6,h:8,leaf:false}]});
+  rect(g,25.6,20,41.5,28.2,8,8.5,M.slab);
+  var lo={y0:-.5,h:7.5,t:.5,m:M.trim};
+  wall(g,0,20.5,5.2,20.5,lo); wall(g,0,26.5,5.2,26.5,lo); wall(g,E,20.5,E,26.5,lo);
+  wall(g,5.2,20.5,5.2,26.5,{y0:-.5,h:7.5,t:.5,m:M.trim,open:[{k:'door',p:22,w:3,h:6,leaf:false}]});
+  rect(g,-.5,20,5.7,27,7,7.5,M.slab);
+  [14,20].forEach(function(x){
+    rect(g,x-2,23,x-1.4,25.2,0,1,M.conc); rect(g,x+1.4,23,x+2,25.2,0,1,M.conc);
+    cyl(g,x,3.2,24.1,2.1,2.3,4.4,mat('#e9edf0',{roughness:.5}),20); cyl(g,x,5.5,24.1,1.2,2.1,.4,mat('#e9edf0',{roughness:.5}),20);
+  });
+  return g;
+}
+
+/* ---------- site: ground, compound wall, road, trees ---------- */
+function tree(g,x,z,s,palm){
+  var t=grp(g,x,z,0);
+  if(palm){
+    cyl(t,0,8*s,0,.45*s,.7*s,16*s,mat('#8a6b4a'),8);
+    for(var i=0;i<7;i++){
+      var pv=new T.Group(); pv.position.y=16*s; pv.rotation.y=i*Math.PI*2/7; t.add(pv);
+      var lf=new T.Mesh(new T.SphereGeometry(1,6,4),mat('#4f8a4a')); lf.scale.set(4*s,.22*s,.9*s); lf.position.set(2.6*s,0,0); lf.rotation.z=-.4; lf.castShadow=true; pv.add(lf);
+    }
+  } else {
+    cyl(t,0,5*s,0,.7*s,.9*s,10*s,mat('#6f5238'),8);
+    var f1=new T.Mesh(new T.IcosahedronGeometry(5.2*s,1),mat('#5f8f4f',{flatShading:true})); f1.position.set(0,13*s,0); f1.castShadow=true; t.add(f1);
+    var f2=new T.Mesh(new T.IcosahedronGeometry(3.6*s,1),mat('#6fa05a',{flatShading:true})); f2.position.set(2.4*s,16*s,1*s); f2.castShadow=true; t.add(f2);
+  }
+}
+function buildSite(){
+  var g=new T.Group();
+  var gp=new T.Mesh(new T.PlaneGeometry(900,900),mat('#a3ad98')); gp.rotation.x=-Math.PI/2; gp.position.set(25,-.3,30); gp.receiveShadow=true; g.add(gp);
+  box(g,25,-.15,30,50,.3,60,mat('#a9a7a1'),false);
+  box(g,25,-.1,76,400,.2,32,mat('#44474c'),false);
+  box(g,25,.02,60.9,400,.3,1.6,mat('#b9b6b0'),false);
+  for(var x=-60;x<110;x+=8) box(g,x,.12,76,4,.02,.35,M.white,false);
+  /* compound wall */
+  var cw=mat('#d9d4ca'), cap=M.trim;
+  rect(g,0,0,50,.6,0,4.5,cw); rect(g,0,0,.6,60,0,4.5,cw); rect(g,49.4,0,50,60,0,4.5,cw);
+  rect(g,0,59.4,20.5,60,0,4.5,cw); rect(g,29.5,59.4,50,60,0,4.5,cw);
+  rect(g,-.1,-.1,50.1,.7,4.5,4.8,cap,false); rect(g,-.1,-.1,.7,60.1,4.5,4.8,cap,false); rect(g,49.3,-.1,50.1,60.1,4.5,4.8,cap,false);
+  rect(g,-.1,59.3,20.5,60.1,4.5,4.8,cap,false); rect(g,29.5,59.3,50.1,60.1,4.5,4.8,cap,false);
+  box(g,9,2.8,60.25,6,5.4,.3,mat('#6b7a66')); box(g,41,2.8,60.25,6,5.4,.3,mat('#6b7a66'));
+  [[20.5,'a'],[29.5,'b']].forEach(function(p){
+    box(g,p[0],3.6,59.7,1.5,7.2,1.5,M.slab);
+    var l=new T.Mesh(new T.SphereGeometry(.45,12,8),lampMat); l.position.set(p[0],7.7,59.7); g.add(l);
+  });
+  var gl=new T.Group(); gl.position.set(20.9,0,59.7); gl.rotation.y=1.2; g.add(gl); box(gl,2.1,2.8,0,4.2,5.4,.2,M.woodL);
+  var gr=new T.Group(); gr.position.set(29.1,0,59.7); gr.rotation.y=-1.2; g.add(gr); box(gr,-2.1,2.8,0,4.2,5.4,.2,M.woodL);
+  /* hedges */
+  [[1,1.2,49,2.6],[1,1.2,2.6,59],[47.4,1.2,49,59]].forEach(function(h){});
+  rect(g,.6,.6,49.4,2.4,0,1.8,M.green); rect(g,.6,2.4,2.2,59.4,0,1.8,M.green); rect(g,47.8,2.4,49.4,59.4,0,1.8,M.green);
+  rect(g,.6,56.8,19,58.4,0,1.5,M.green); rect(g,31,56.8,49.4,58.4,0,1.5,M.green);
+  /* trees outside the plot */
+  [[-8,6,1.1,0],[-9,30,1,0],[-7,52,1.2,0],[58,8,1.1,0],[59,34,1.2,0],[57,54,1,0],[8,64,1,1],[42,64,1.1,1],[-20,66,1,1],[70,66,1,1]].forEach(function(t){ tree(g,t[0],t[1],t[2],!!t[3]); });
+  car(g,12,70,0,'#7c8aa0');
+  return g;
+}
+
+/* ---------- assemble ---------- */
+var site=new T.Group(); site.position.set(-25,0,-30); scene.add(site);
+site.add(buildSite());
+var building=new T.Group(); building.position.set(4.5,0,4.5); site.add(building);
+var levelGroups=[], labelGroups=[];
+levelGroups[0]=buildGround(); building.add(levelGroups[0]);
+for(var Li=1;Li<=4;Li++){ var lg=buildLevel(Li); building.add(lg); levelGroups[Li]=lg; }
+var roofGroup=buildRoof(); building.add(roofGroup);
+for(var Lj=0;Lj<=4;Lj++){ var lbg=new T.Group(); building.add(lbg); labelGroups[Lj]=lbg; }
+var cabin=new T.Group(); building.add(cabin);
+box(cabin,2.85,3.65,23.35,3.7,7.2,4.3,M.steel); box(cabin,4.7,3.4,23.35,.12,6.6,2.9,mat('#d6dbe0',{metalness:.4}),false);
+cabin.userData.y=0;
+
+/* ---------- labels ---------- */
+function rr(c,x,y,w,h,r){ c.beginPath(); c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r); c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath(); }
+function makeLabel(title,sub,accent){
+  var px=2,f1=26,f2=19,padX=14,padY=9;
+  var cv=document.createElement('canvas'), c=cv.getContext('2d');
+  c.font='600 '+(f1*px)+'px "IBM Plex Sans",system-ui,sans-serif'; var w1=c.measureText(title).width;
+  c.font='500 '+(f2*px)+'px "IBM Plex Mono",ui-monospace,monospace'; var w2=sub?c.measureText(sub).width:0;
+  var W=Math.ceil(Math.max(w1,w2)+padX*2*px), H=Math.ceil(((sub?f1+f2+6:f1)+padY*2)*px);
+  cv.width=W; cv.height=H;
+  rr(c,3,3,W-6,H-6,10*px); c.fillStyle=accent?'#c4561a':'rgba(250,250,248,.94)'; c.fill();
+  c.lineWidth=2; c.strokeStyle=accent?'#c4561a':'rgba(20,32,59,.3)'; c.stroke();
+  c.textAlign='center'; c.textBaseline='middle';
+  var cx=W/2, y1=sub?(padY+f1/2)*px:H/2;
+  c.fillStyle=accent?'#ffffff':'#14203b'; c.font='600 '+(f1*px)+'px "IBM Plex Sans",system-ui,sans-serif'; c.fillText(title,cx,y1);
+  if(sub){ c.fillStyle=accent?'#ffe9db':'#4a5671'; c.font='500 '+(f2*px)+'px "IBM Plex Mono",ui-monospace,monospace'; c.fillText(sub,cx,(padY+f1+6+f2/2)*px); }
+  var tex=new T.CanvasTexture(cv); tex.encoding=T.sRGBEncoding; tex.anisotropy=4;
+  var sp=new T.Sprite(new T.SpriteMaterial({map:tex,transparent:true,depthTest:false,depthWrite:false,fog:false}));
+  sp.scale.set(W/px/26,H/px/26,1); sp.renderOrder=20; return sp;
+}
+var LB_FLAT=[
+  ['Balcony','12′ × 5′3″',6.2,2.8],['Common bedroom','12′ × 10′',6.2,10.7],['Toilet','',3.7,18.4],
+  ['Hall / Dining','12′9″ × 19′9″',19.2,10.5],['Kitchen','8′ × 9′6″',30,5.2],['Utility','',37.5,2.8],['Toilet','',37.5,7.7],
+  ['Master bedroom','14′ × 10′',33.7,15.2],['Puja','',24.4,1.3],
+  ['Hall / Living','14′ × 10′',7,32.8],['Dining','10′ × 13′',20,35.5],['Common bedroom','10′6″ × 10′',5.2,43.5],
+  ['Balcony','4′3″ deep',20.2,47],['Kitchen','8′ × 9′6″',30,32.5],['Utility','',37.5,30],['Toilet','',37.5,35],
+  ['Master bedroom','14′ × 10′',33.5,43.3],['Corridor','6′4″ wide',15.6,24.1],['Lift','',2.6,23.4],['Staircase','',33.5,24.1]
+];
+var LB_GROUND=[['Parking','4 cars',8.2,10.4],['Parking','4 cars',33.7,10.4],['Parking','4 cars',8.2,38.5],['Parking','4 cars',33.7,38.5],['Drive passage','10′ wide',21,24.1],['Lift','',2.6,23.4],['Staircase','',33.5,24.1]];
+function buildLabels(){
+  for(var L=0;L<=4;L++){
+    var grp_=labelGroups[L], list=L===0?LB_GROUND:LB_FLAT;
+    list.forEach(function(d){ var s=makeLabel(d[0],d[1],false); s.position.set(d[2],.9,d[3]); grp_.add(s); });
+    if(L>0){
+      var a=makeLabel('FLAT '+L+'01','',true); a.position.set(19.2,.9,17); grp_.add(a);
+      var b=makeLabel('FLAT '+L+'02','',true); b.position.set(20,.9,41.5); grp_.add(b);
+    }
+  }
+  var rc=document.createElement('canvas'); rc.width=2048; rc.height=128; var c=rc.getContext('2d');
+  c.fillStyle='#e07a2f'; c.font='600 84px "IBM Plex Sans",system-ui,sans-serif'; c.textAlign='center'; c.textBaseline='middle';
+  if('letterSpacing' in c) c.letterSpacing='14px';
+  c.fillText('EXISTING 30′ WIDE ROAD',1024,66);
+  var rt=new T.CanvasTexture(rc); rt.encoding=T.sRGBEncoding;
+  var rp=new T.Mesh(new T.PlaneGeometry(48,3),new T.MeshBasicMaterial({map:rt,transparent:true,fog:false}));
+  rp.rotation.x=-Math.PI/2; rp.position.set(25,.3,68); site.add(rp);
+  applyState();
+}
+
+/* ---------- state + UI ---------- */
+var sel=5, showLabels=true, night=false, ex=0;
+var LV=[
+  {id:5,tag:'ALL',name:'Whole building',fl:'8 flats'},
+  {id:4,tag:'L4',name:'Level 4',fl:'401 · 402'},
+  {id:3,tag:'L3',name:'Level 3',fl:'301 · 302'},
+  {id:2,tag:'L2',name:'Level 2',fl:'201 · 202'},
+  {id:1,tag:'L1',name:'Level 1',fl:'101 · 102'},
+  {id:0,tag:'G',name:'Stilt & parking',fl:'8 cars'}
+];
+var levelsEl=document.getElementById('levels'), infoEl=document.getElementById('info'), hudLevel=document.getElementById('hudLevel');
+LV.forEach(function(v){
+  var b=document.createElement('button'); b.type='button'; b.className='lv'; b.dataset.id=v.id; b.setAttribute('aria-pressed','false');
+  b.innerHTML='<span class="tag">'+v.tag+'</span><span class="nm">'+v.name+'</span><span class="fl">'+v.fl+'</span>';
+  b.addEventListener('click',function(){ sel=v.id; applyState(); flyLevel(); });
+  levelsEl.appendChild(b);
+});
+function infoFor(id){
+  if(id===5) return ['Whole building','Stilt parking plus four floors, two 2BHK flats on each.','9,064 sq ft built-up on 333 sq yd of land.'];
+  if(id===0) return ['Stilt & parking','Covered parking for 8 cars on either side of a 10′ drive passage.','Lift (4 persons) and staircase sit at the core.'];
+  return ['Level '+id,'Flat '+id+'01 at the back, Flat '+id+'02 facing the road.','Each flat is 1,133 sq ft with a 41.625 sq yd share of the land.'];
+}
+function applyState(){
+  ex=(+document.getElementById('rngExplode').value)/100*9;
+  levelGroups.forEach(function(g,i){ g.visible=i<=sel; g.position.y=10*i+ex*i; });
+  roofGroup.visible=sel===5; roofGroup.position.y=50+ex*5;
+  labelGroups.forEach(function(g,i){ g.visible=showLabels&&i===sel; g.position.y=10*i+ex*i; });
+  Array.prototype.forEach.call(levelsEl.children,function(b){ b.setAttribute('aria-pressed',String(+b.dataset.id===sel)); });
+  var inf=infoFor(sel); infoEl.innerHTML='<h3>'+inf[0]+'</h3><p>'+inf[1]+'</p><p>'+inf[2]+'</p>';
+  hudLevel.textContent=inf[0];
+  var cl=sel===5?0:sel; cabin.userData.ty=10*cl+ex*cl;
+}
+function setNight(on){
+  night=on;
+  scene.background.set(on?SKY.night:SKY.day); scene.fog.color.set(on?SKY.night:SKY.day);
+  stageEl.style.background=on?SKY.night:SKY.day;
+  hemi.color.set(on?'#33406a':'#dfeaf5'); hemi.groundColor.set(on?'#0f1220':'#8a8576'); hemi.intensity=on?.55:.9;
+  sun.color.set(on?'#8fa6ff':'#fff3e0'); sun.intensity=on?.45:1.7;
+  glass.emissive.set(on?'#ffb454':'#000000'); glass.emissiveIntensity=on?.95:0; glass.opacity=on?.85:.38;
+  lampMat.emissive.set(on?'#ffd27a':'#000000'); lampMat.emissiveIntensity=on?1.4:0;
+}
+document.getElementById('swLabels').addEventListener('change',function(e){ showLabels=e.target.checked; applyState(); });
+document.getElementById('swNight').addEventListener('change',function(e){ setNight(e.target.checked); });
+document.getElementById('swSpin').addEventListener('change',function(e){ controls.autoRotate=e.target.checked; });
+document.getElementById('rngExplode').addEventListener('input',applyState);
+
+/* ---------- camera ---------- */
+var tw=null, aspect=1.6;
+function fit(pos,tgt){
+  var k=aspect<1?1+(1-aspect)*1.1:1, t=new T.Vector3(tgt[0],tgt[1],tgt[2]), p=new T.Vector3(pos[0],pos[1],pos[2]);
+  return [p.sub(t).multiplyScalar(k).add(t),t];
+}
+function flyTo(pos,tgt,ms){
+  var f=fit(pos,tgt); tw={p0:camera.position.clone(),t0:controls.target.clone(),p1:f[0],t1:f[1],s:performance.now(),ms:ms||900};
+}
+function flyLevel(){
+  if(sel===5) return flyTo([88,62,118],[0,22,-1]);
+  var y=10*sel+ex*sel;
+  flyTo([60,y+68,88],[0,y+(sel===0?3:2),-1]);
+}
+var VIEWS={corner:[[88,62,118],[0,22,-1]],front:[[0,30,150],[0,22,-1]],back:[[0,30,-150],[0,22,-1]],plan:[[0,175,16],[0,0,-1]]};
+Array.prototype.forEach.call(document.querySelectorAll('[data-view]'),function(b){
+  b.addEventListener('click',function(){
+    var v=VIEWS[b.dataset.view], t=v[1].slice();
+    if(b.dataset.view==='plan'&&sel<5) t[1]=10*sel;
+    var p=v[0].slice(); if(b.dataset.view==='plan'&&sel<5) p[1]=10*sel+170;
+    flyTo(p,t);
+  });
+});
+controls.addEventListener('start',function(){ tw=null; });
+if(window.matchMedia&&matchMedia('(pointer:coarse)').matches) document.getElementById('hint').textContent='Drag to orbit · Pinch to zoom · Two fingers to pan';
+
+function resize(){
+  var w=stageEl.clientWidth,h=stageEl.clientHeight; if(!w||!h) return;
+  renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); aspect=w/h;
+}
+if(window.ResizeObserver) new ResizeObserver(resize).observe(stageEl); else window.addEventListener('resize',resize);
+resize();
+(function(){ var f=fit([88,62,118],[0,22,-1]); camera.position.copy(f[0]); controls.target.copy(f[1]); controls.update(); })();
+
+/* ---------- loop ---------- */
+function frame(now){
+  requestAnimationFrame(frame);
+  if(tw){ var k=Math.min(1,(now-tw.s)/tw.ms), e=k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
+    camera.position.lerpVectors(tw.p0,tw.p1,e); controls.target.lerpVectors(tw.t0,tw.t1,e); if(k>=1) tw=null; }
+  if(cabin.userData.ty!=null) cabin.position.y+=(cabin.userData.ty-cabin.position.y)*.06;
+  controls.update(); renderer.render(scene,camera);
+}
+applyState();
+requestAnimationFrame(frame);
+var fontsReady=(document.fonts&&document.fonts.ready)?Promise.race([document.fonts.ready,new Promise(function(r){setTimeout(r,1500);})]):Promise.resolve();
+fontsReady.then(buildLabels);
+})();
+</script>
+
+</body></html>
